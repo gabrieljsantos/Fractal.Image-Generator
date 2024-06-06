@@ -60,7 +60,7 @@ def image_generator(index, xmin, xmax, ymin, ymax):
     image_data_generator(index, n_img)
 
     # Criar uma nova imagem
-    imagem = Image.new("RGB", (image_width, image_height), "black")
+    imagem = Image.new("RGB", (image_width, image_height), (61,62, 63))  # Cor de fundo pastel
 
     # Preencher a imagem com os dados gerados
     for y in range(image_height):
@@ -71,8 +71,15 @@ def image_generator(index, xmin, xmax, ymin, ymax):
             c = complex(zx, zy)
             # Verifica se o ponto pertence ao conjunto de Mandelbrot
             cor = mandelbrot(c)
-            # Mapeia o número de iterações para uma cor
-            imagem.putpixel((x, y), (cor % 256, (cor * 2) % 256, (cor * 3) % 256))
+            # Mapeia o número de iterações para uma cor pastel
+            r = math.cos(cor % 256)
+            g = -(cor * 2) % 256
+            b = (cor * 3) % 256
+            # Ajuste para tons pastéis
+            r = min(int((r + 220) / 2), 255)
+            g = min(int((g + 220) / 2), 255)
+            b = min(int((b + 220) / 2), 255)
+            imagem.putpixel((x, y), (r, g, b))
 
     # Nome do arquivo com base no índice
     nome_arquivo = f"img_{index}.png"
@@ -82,25 +89,26 @@ def image_generator(index, xmin, xmax, ymin, ymax):
     imagem.save(caminho_imagem)
 
 
+
 # Criar o diretório de saída e obter seu nome
 diretorio_de_saida = create_output_directory()
 
 # Variáveis globais
 MAX_ITERATIONS = 100
 image_data = []
-image_width = 200
-image_height = 200
+image_width = 100
+image_height = 100
 n_img = 500
 Delta = 0.005
-x = 2
-y = 2
+x = 0.253
+y = 0.0031
+size = 0.0000829
 exp = 1 #exponent
-
 
 # Executar a geração de imagens
 for i in range(n_img):
-    xmin = -x + i * (Delta ** exp)
-    xmax = x - i * (Delta ** exp)
-    ymin = -y + i * (Delta ** exp)
-    ymax = y - i * (Delta ** exp)
+    xmin = x - size/2 + i * (Delta ** exp)
+    xmax = x + size/2 - i * (Delta ** exp)
+    ymin = y - size/2 + i * (Delta ** exp)
+    ymax = y + size/2 - i * (Delta ** exp)
     image_generator(i, xmin, xmax, ymin, ymax)
