@@ -34,7 +34,7 @@ Este repositório contém um projeto em desenvolvimento para a criação de imag
 4. As imagens geradas serão salvas no diretório `Output`.
 #### Resultados
 
-[![Fractal Result_2024-06-06_01.25.00](https://img.youtube.com/vi/OEGRl1Pd0Vg/0.jpg)](https://youtu.be/OEGRl1Pd0Vg)
+[![Fractal Result_2024-06-06_01.25.00](https://github.com/gabrieljsantos/Fractal.Image-Generator/blob/main/Other/cover.jpg?raw=true)](https://youtu.be/OEGRl1Pd0Vg)
 
 #### Status do Projeto
 
