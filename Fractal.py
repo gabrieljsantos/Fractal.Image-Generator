@@ -54,13 +54,13 @@ def mandelbrot(c):
     return n
 
 # Função para gerar uma imagem do Conjunto de Mandelbrot
-def image_generator(index, xmin, xmax, ymin, ymax):
+def image_generator(index, xmin, xmax, ymin, ymax, background_color, pastel_factor):
     global image_data, diretorio_de_saida
     image_data = []  # Reset image_data for each call
     image_data_generator(index, n_img)
 
     # Criar uma nova imagem
-    imagem = Image.new("RGB", (image_width, image_height), (61,62, 63))  # Cor de fundo pastel
+    imagem = Image.new("RGB", (image_width, image_height), background_color)  # Cor de fundo pastel
 
     # Preencher a imagem com os dados gerados
     for y in range(image_height):
@@ -72,13 +72,18 @@ def image_generator(index, xmin, xmax, ymin, ymax):
             # Verifica se o ponto pertence ao conjunto de Mandelbrot
             cor = mandelbrot(c)
             # Mapeia o número de iterações para uma cor pastel
-            r = math.cos(cor % 256)
-            g = -(cor * 2) % 256
-            b = (cor * 3) % 256
+            b = int(cor*index) % 256
+            r = int(cor*0.05*index) % 256
+            g = int(cor*0.01*index) % 256
+            """
+            b = (cor) % 256
+            r = ((math.cos(cor)) % 256)/math.sin(2*b)
+            g = ((math.tan(cor)) % 256)/math.sin(2*b)"""
+            """
             # Ajuste para tons pastéis
-            r = min(int((r + 220) / 2), 255)
-            g = min(int((g + 220) / 2), 255)
-            b = min(int((b + 220) / 2), 255)
+            r = min(int((r + pastel_factor) / 2), 255)
+            g = min(int((g + pastel_factor) / 2), 255)
+            b = min(int((b + pastel_factor) / 2), 255)"""
             imagem.putpixel((x, y), (r, g, b))
 
     # Nome do arquivo com base no índice
@@ -96,8 +101,8 @@ diretorio_de_saida = create_output_directory()
 # Variáveis globais
 MAX_ITERATIONS = 100
 image_data = []
-image_width = 100
-image_height = 100
+image_width = 1024
+image_height = 1024
 n_img = 500
 Delta = 0.005
 x = 0.253
@@ -111,4 +116,8 @@ for i in range(n_img):
     xmax = x + size/2 - i * (Delta ** exp)
     ymin = y - size/2 + i * (Delta ** exp)
     ymax = y + size/2 - i * (Delta ** exp)
-    image_generator(i, xmin, xmax, ymin, ymax)
+    image_generator(i, xmin, xmax, ymin, ymax,(61, 62, 63),230)
+    percentage = 100*i/n_img
+    print(f"{100*i/n_img} %")
+
+print("100 %")
