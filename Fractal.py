@@ -101,14 +101,22 @@ diretorio_de_saida = create_output_directory()
 # Variáveis globais
 MAX_ITERATIONS = 100
 image_data = []
+
 image_width = 1024
 image_height = 1024
 n_img = 500
 Delta = 0.005
 x = 0.253
-y = 0.0031
+y = 0.00
 size = 0.0000829
 exp = 1 #exponent
+
+time_last = datetime.datetime.now()
+time_total = 0
+generation_speed = 0
+missing_time = 0
+
+
 
 # Executar a geração de imagens
 for i in range(n_img):
@@ -116,8 +124,23 @@ for i in range(n_img):
     xmax = x + size/2 - i * (Delta ** exp)
     ymin = y - size/2 + i * (Delta ** exp)
     ymax = y + size/2 - i * (Delta ** exp)
-    image_generator(i, xmin, xmax, ymin, ymax,(61, 62, 63),230)
-    percentage = 100*i/n_img
-    print(f"{100*i/n_img} %")
+    image_generator(i, xmin, xmax, ymin, ymax, (61, 62, 63), 230)
+    
+    percentage = 100 * i / n_img
+    
+    time_now = datetime.datetime.now()
+    if i > 0:  # Evitar cálculo na primeira iteração
+        elapsed_time = (time_now - time_last).total_seconds()
+        time_total += elapsed_time
+        average_time_per_image = time_total / i
+        missing_time = average_time_per_image * (n_img - i)
+    else:
+        elapsed_time = 0
+        average_time_per_image = 0
+        missing_time = 0
+    
+    time_last = time_now
+    
+    print(f"Progress: {percentage:.2f}% - Elapsed time: {datetime.timedelta(seconds=int(time_total))} - Estimated remaining time: {datetime.timedelta(seconds=int(missing_time))}")
 
-print("100 %")
+print("100 % - Geração de imagens concluída")
