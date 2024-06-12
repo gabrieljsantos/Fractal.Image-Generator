@@ -2,8 +2,8 @@ import os
 import datetime
 import math
 import random
+from multiprocessing import Pool
 from PIL import Image
-from concurrent.futures import ProcessPoolExecutor
 
 # Função para criar o diretório de saída
 def create_output_directory():
@@ -22,23 +22,6 @@ def create_output_directory():
     os.makedirs(nome_diretorio, exist_ok=True)
     return nome_diretorio
 
-# Função para gerar os dados da imagem do Conjunto de Mandelbrot
-def image_data_generator(index, index_limit):
-    global image_data
-    image_data = []  # Reset image_data for each call
-    for iw in range(image_height):
-        line = []
-        for ih in range(image_width):
-            # Calcula o valor de suavização
-            c = complex((index * 2) / index_limit - 1, (index * 2) / index_limit - 1)
-            suavizacao = mandelbrot(c)
-            # Mapeia a suavização para o intervalo de 0 a 255
-            intensidade = int(255 * suavizacao / MAX_ITERATIONS)
-            # Gera uma cor suavizada
-            cor = (intensidade, intensidade, intensidade)
-            line.append(cor)
-        image_data.append(line)
-
 # Função para calcular o Conjunto de Mandelbrot
 def mandelbrot(c):
     z = 0
@@ -49,8 +32,7 @@ def mandelbrot(c):
     return n
 
 # Função para gerar uma imagem do Conjunto de Mandelbrot
-def image_generator(index, xmin, xmax, ymin, ymax, background_color, pastel_factor):
-    global diretorio_de_saida
+def image_generator(index, xmin, xmax, ymin, ymax, background_color, pastel_factor, output_dir):
     # Criar uma nova imagem
     imagem = Image.new("RGB", (image_width, image_height), background_color)
     # Preencher a imagem com os dados gerados
@@ -69,12 +51,9 @@ def image_generator(index, xmin, xmax, ymin, ymax, background_color, pastel_fact
             imagem.putpixel((x, y), (r, g, b))
     # Nome do arquivo com base no índice
     nome_arquivo = f"img_{index}.png"
-    caminho_imagem = os.path.join(diretorio_de_saida, nome_arquivo)
+    caminho_imagem = os.path.join(output_dir, nome_arquivo)
     # Salvar a imagem
     imagem.save(caminho_imagem)
-
-# Criar o diretório de saída e obter seu nome
-diretorio_de_saida = create_output_directory()
 
 # Variáveis globais
 MAX_ITERATIONS = 100
@@ -89,41 +68,46 @@ y = 0.00
 size = 0.0000829
 exp = 1  # Exponent
 
+def generate_single_image(args):
+    index, xmin, xmax, ymin, ymax, output_dir = args
+    image_generator(index, xmin, xmax, ymin, ymax, (61, 62, 63), 230, output_dir)
+    return index
 
-time_last = datetime.datetime.now()
-time_total = 0
+if __name__ == "__main__":
+    # Criar o diretório de saída e obter seu nome
+    diretorio_de_saida = create_output_directory()
 
-print(f"Progress: 0.0% - Elapsed time: 0:00:00 - Estimated remaining time: *:**:** - Generation speed: * images/sec")
+    args_list = []
+    for i in range(n_img):
+        xmin = x - size / 2 + i * (Delta ** exp)
+        xmax = x + size / 2 - i * (Delta ** exp)
+        ymin = y - size / 2 + i * (Delta ** exp)
+        ymax = y + size / 2 - i * (Delta ** exp)
+        args_list.append((i, xmin, xmax, ymin, ymax, diretorio_de_saida))
 
-# Executar a geração de imagens
-for i in range(n_img):
-    xmin = x - size / 2 + i * (Delta ** exp)
-    xmax = x + size / 2 - i * (Delta ** exp)
-    ymin = y - size / 2 + i * (Delta ** exp)
-    ymax = y + size / 2 - i * (Delta ** exp)
-    image_generator(i, xmin, xmax, ymin, ymax, (61, 62, 63), 230)
+    time_last = datetime.datetime.now()
+    time_total = 0
 
-    # Calcula a porcentagem de progresso considerando (i+1) imagens geradas
-    percentage = 100 * (i + 1) / n_img
+    print(f"Progress: 0.0% - Elapsed time: 0:00:00 - Estimated remaining time: *:**:** - Generation speed: * images/sec")
 
-    time_now = datetime.datetime.now()
-    elapsed_time = (time_now - time_last).total_seconds()
-    time_total += elapsed_time
-    # Média do tempo por imagem considerando (i+1) imagens geradas
-    average_time_per_image = time_total / (i + 1)
-    # Tempo restante considerando as imagens faltantes
-    missing_time = average_time_per_image * (n_img - (i + 1))
+    with Pool() as pool:
+        for index in pool.imap_unordered(generate_single_image, args_list):
+            time_now = datetime.datetime.now()
+            elapsed_time = (time_now - time_last).total_seconds()
+            time_total += elapsed_time
+            percentage = 100 * (index + 1) / n_img
+            average_time_per_image = time_total / (index + 1)
+            missing_time = average_time_per_image * (n_img - (index + 1))
 
-    # Calcular a velocidade de geração
-    if average_time_per_image > 1:
-        generation_speed = 60 / average_time_per_image  # imagens por minuto
-        speed_unit = "images/min"
-    else:
-        generation_speed = 1 / average_time_per_image  # imagens por segundo
-        speed_unit = "images/sec"
+            if average_time_per_image < 1:
+                generation_speed = 60 / average_time_per_image  # imagens por minuto
+                speed_unit = "images/min"
+            else:
+                generation_speed = 1 / average_time_per_image  # imagens por segundo
+                speed_unit = "images/sec"
 
-    time_last = time_now
+            time_last = time_now
 
-    print(f"Progress: {percentage:.2f}% - Elapsed time: {datetime.timedelta(seconds=int(time_total))} - Estimated remaining time: {datetime.timedelta(seconds=int(missing_time))} - Generation speed: {generation_speed:.2f} {speed_unit}")
+            print(f"Progress: {percentage:.2f}% - Elapsed time: {datetime.timedelta(seconds=int(time_total))} - Estimated remaining time: {datetime.timedelta(seconds=int(missing_time))} - Generation speed: {generation_speed:.2f} {speed_unit}")
 
-print("100% - Geração de imagens concluída")
+    print("100% - Geração de imagens concluída")
